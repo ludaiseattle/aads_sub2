@@ -46,6 +46,11 @@ type AdjList = [[Int]]
 
 type AdjMatrix = [[Bool]]
 
+-- Suppose we're given a graph as a list of edges (i,j)
+-- Generate the Adjacency List and Adjacencty Matrix representations
+
+-- GENERATION OF ADJACENCY LIST
+
 fillGap :: Int -> AdjList -> AdjList
 fillGap n l =
    if length l > n then l 
@@ -56,18 +61,28 @@ insertTuple :: (Int,Int)->AdjList -> AdjList
 insertTuple tup l = insertEle tup (fillGap (fst tup) l)
        where insertEle tup list = (take (fst tup) list) ++ [snd tup:(list!!fst tup)] ++ (drop (fst tup+1) list)
 
--- Suppose we're given a graph as a list of edges (i,j)
--- Generate the Adjacency List and Adjacencty Matrix representations
-
--- GENERATION OF ADJACENCY LIST
 adjList :: [(Int,Int)] -> AdjList
 adjList [] = []
 adjList (x:xs) = insertTuple (fst x, snd x)  (adjList xs)
 
-
 -- GENERATION OF ADJACENCY MATRIX
+fillByBool :: Int -> [Bool] -> [Bool]
+fillByBool n l = fill n (fillBoolGap n l)
+   where fillBoolGap n l = if length l > n then l else l ++ take (n - length l +1) (repeat False)
+         fill n list= take n list ++ [True] ++ drop (n+1) list
 
---adjMatrix :: [(Int,Int)] -> AdjMatrix
+fillBoolGap :: Int -> AdjMatrix -> AdjMatrix
+fillBoolGap n l =
+   if length l > n then l 
+   else l ++ take (n - length l +1) (repeat [])
+
+insertMatrix :: (Int,Int) -> AdjMatrix -> AdjMatrix
+insertMatrix tup l = insertValue tup (fillBoolGap (fst tup) l)
+   where insertValue tup list = (take (fst tup) list) ++ [fillByBool (snd tup) (list!!fst tup)] ++ (drop (fst tup+1) list)
+
+adjMatrix :: [(Int,Int)] -> AdjMatrix
+adjMatrix [] = []
+adjMatrix (x:xs) = insertMatrix (fst x, snd x) (adjMatrix xs)
 
 --------------------------------------------------------
 
@@ -78,7 +93,7 @@ adjList (x:xs) = insertTuple (fst x, snd x)  (adjList xs)
    there is an edge from i to j with weight w
 -}
 
---type WAdjList = [[(Int,Float)]]
+type WAdjList = [[(Int,Float)]]
 
 {- In an adjacency matrix am, the element with
    coordinates i,j is
