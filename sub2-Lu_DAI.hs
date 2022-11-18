@@ -47,25 +47,27 @@ type AdjList = [[Int]]
 type AdjMatrix = [[Bool]]
 
 fillGap :: Int -> AdjList -> AdjList
-fillGap n l = if length l >= n then l else fillGap n l++[[]]
+fillGap n l =
+   if length l > n then l 
+   else l ++ take (n - length l +1) (repeat [])
 
-insertTuple :: (Int,Int) AdjList -> AdjList
-insertTuple (a,b) _ = insertEle b (fillGap a _)
-   where insertEle b l = take (a-1) l ++ b:l!!a ++ drop a l
+
+insertTuple :: (Int,Int)->AdjList -> AdjList
+insertTuple tup l = insertEle tup (fillGap (fst tup) l)
+       where insertEle tup list = (take (fst tup) list) ++ [snd tup:(list!!fst tup)] ++ (drop (fst tup+1) list)
 
 -- Suppose we're given a graph as a list of edges (i,j)
 -- Generate the Adjacency List and Adjacencty Matrix representations
 
 -- GENERATION OF ADJACENCY LIST
-{-1. 检查从0-下标有没有，没有就建立 2.将fst tuple 的列表取出来，粘上scd tuple 3. 下标前 ++ 修改的列表 ++ 下表后列表群 -}
 adjList :: [(Int,Int)] -> AdjList
 adjList [] = []
-adjList [(a,b):xs] = insertTuple (a,b)  (adjList xs)
+adjList (x:xs) = insertTuple (fst x, snd x)  (adjList xs)
 
 
 -- GENERATION OF ADJACENCY MATRIX
 
-adjMatrix :: [(Int,Int)] -> AdjMatrix
+--adjMatrix :: [(Int,Int)] -> AdjMatrix
 
 --------------------------------------------------------
 
@@ -76,7 +78,7 @@ adjMatrix :: [(Int,Int)] -> AdjMatrix
    there is an edge from i to j with weight w
 -}
 
-type WAdjList = [[(Int,Float)]]
+--type WAdjList = [[(Int,Float)]]
 
 {- In an adjacency matrix am, the element with
    coordinates i,j is
@@ -84,23 +86,23 @@ type WAdjList = [[(Int,Float)]]
      (Just w) if there is an edge from i to j with weight w
 -}
 
-type WAdjMatrix = [[Maybe Float]]
+--type WAdjMatrix = [[Maybe Float]]
 
 {- We can also represent a weighted graphs by a list of edges
    (i,j,w) denotes an edge from i to j with weight w
 -}
 
-type Edges = [(Int,Int,Float)]
+--type Edges = [(Int,Int,Float)]
 
 -- GENERATION OF ADJACENCY LIST
 --   from a list of edges
 
-adjListW :: Edges -> WAdjList
+--adjListW :: Edges -> WAdjList
 
 -- GENERATION OF ADJACENCY MATRIX
 --   from a list of edges
 
-adjMatrixW :: Edges -> WAdjMatrix
+--adjMatrixW :: Edges -> WAdjMatrix
 
 -- DIJKSTRA'S ALGORITHM
 
@@ -110,7 +112,7 @@ adjMatrixW :: Edges -> WAdjMatrix
    (dijkstra al s)!!j is the minimum distance from s to j
 -}
 
-dijkstra :: WAdjList -> Int -> [Maybe Float]
+--dijkstra :: WAdjList -> Int -> [Maybe Float]
 
 -- FLOYD-WARSHALL ALGORITHM
 
@@ -121,4 +123,4 @@ dijkstra :: WAdjList -> Int -> [Maybe Float]
      (Just x) if the shortest path from i to j has length x
 -}
 
-floydWarshall :: WAdjMatrix -> WAdjMatrix
+--floydWarshall :: WAdjMatrix -> WAdjMatrix
