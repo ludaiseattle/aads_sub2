@@ -101,18 +101,40 @@ type WAdjList = [[(Int,Float)]]
      (Just w) if there is an edge from i to j with weight w
 -}
 
---type WAdjMatrix = [[Maybe Float]]
+type WAdjMatrix = [[Maybe Float]]
 
 {- We can also represent a weighted graphs by a list of edges
    (i,j,w) denotes an edge from i to j with weight w
 -}
 
---type Edges = [(Int,Int,Float)]
+type Edges = [(Int,Int,Float)]
+
+
+first::(a,b,c) -> a
+first (x, _, _) = x
+
+second :: (a,b,c) -> b
+second (_,y,_) = y
+
+third :: (a,b,c) -> c
+third (_,_,z) = z
 
 -- GENERATION OF ADJACENCY LIST
 --   from a list of edges
 
---adjListW :: Edges -> WAdjList
+fillLWGap :: Int -> WAdjList -> WAdjList
+fillLWGap n l =
+   if length l > n then l 
+   else l ++ take (n - length l +1) (repeat [])
+
+insertListW :: (Int, Int, Float) -> WAdjList -> WAdjList
+insertListW tup l = insertLWEle tup (fillLWGap (first tup) l)
+   where insertLWEle tup list = (take (first tup) list) ++ [(second tup, third tup):(list!!first tup)] ++ (drop (first tup+1) list)
+
+adjListW :: Edges -> WAdjList
+adjListW [] = []
+adjListW (x:xs) = insertListW (first x, second x, third x)  (adjListW xs)
+
 
 -- GENERATION OF ADJACENCY MATRIX
 --   from a list of edges
