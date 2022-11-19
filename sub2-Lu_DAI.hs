@@ -135,11 +135,29 @@ adjListW :: Edges -> WAdjList
 adjListW [] = []
 adjListW (x:xs) = insertListW (first x, second x, third x)  (adjListW xs)
 
+-- test: adjListW [(1,2,0.1),(1,1,0.2),(2,3,0.5)]
 
 -- GENERATION OF ADJACENCY MATRIX
 --   from a list of edges
 
---adjMatrixW :: Edges -> WAdjMatrix
+fillByBoolW :: (Int, Float) -> [Maybe Float] -> [Maybe Float]
+fillByBoolW (n, w) l = fill (n, w) (fillBoolGap n l)
+   where fillBoolGap n l = if length l > n then l else l ++ take (n - length l +1) (repeat Nothing)
+         fill (n, w) list= take n list ++ [Just w] ++ drop (n+1) list
+
+fillBoolGapW :: Int -> WAdjMatrix -> WAdjMatrix
+fillBoolGapW n l =
+   if length l > n then l 
+   else l ++ take (n - length l +1) (repeat [])
+
+insertMatrixW :: (Int,Int, Float) -> WAdjMatrix -> WAdjMatrix
+insertMatrixW tup l = insertValueW tup (fillBoolGapW (first tup) l)
+   where insertValueW tup list = (take (first tup) list) ++ [fillByBoolW (second tup, third tup) (list!!first tup)] ++ (drop (first tup+1) list)
+
+adjMatrixW :: Edges -> WAdjMatrix
+adjMatrixW [] = []
+adjMatrixW (x:xs) = insertMatrixW (first x, second x, third x) (adjMatrixW xs)
+
 
 -- DIJKSTRA'S ALGORITHM
 
