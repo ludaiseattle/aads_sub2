@@ -158,6 +158,7 @@ adjMatrixW :: Edges -> WAdjMatrix
 adjMatrixW [] = []
 adjMatrixW (x:xs) = insertMatrixW (first x, second x, third x) (adjMatrixW xs)
 
+-- test: adjMatrixW [(1,1,0.1), (1,0,0.2),(2,1,0.3),(3,3,0.4)]
 
 -- DIJKSTRA'S ALGORITHM
 
@@ -167,7 +168,31 @@ adjMatrixW (x:xs) = insertMatrixW (first x, second x, third x) (adjMatrixW xs)
    (dijkstra al s)!!j is the minimum distance from s to j
 -}
 
+type DefinitedDisVec = [Maybe Float]
+type UndefDisVec = [(Bool, Maybe Float)] --true: need to discuss; false: already has a best distance
+
+solveFirst :: Int -> DefinitedDisVec
+solveFirst s = [if x < s then Nothing else Just 0.0| x <- [0..s]]
+
+fillGapUndef :: (Int, Float) -> UndefDisVec -> UndefDisVec
+fillGapUndef tup l = if length l > fst tup then l 
+   else l ++ take (fst tup - length l +1) (repeat (True, Nothing))
+
+fillOne :: (Int, Float) -> UndefDisVec -> UndefDisVec
+fillOne tup l = insertUndefTup tup (fillGapUndef tup l)
+   where insertUndefTup tup list = take (fst tup) list ++ [(True, Just (snd tup))] ++ drop (fst tup+1) list
+
+fillUndefDisVec :: [(Int,Float)] -> UndefDisVec
+fillUndefDisVec [] = []
+fillUndefDisVec (x:xs) = fillOne x (fillUndefDisVec xs)
+
+
+--startRun :: Int -> WAdjList -> DefinitedDisVec -> UndefDisVec -> [Maybe Float]
+--startRun = 
+
 --dijkstra :: WAdjList -> Int -> [Maybe Float]
+--dijkstra [] s = [] 
+--dijkstra l s = startRun s l (solveFirst s) (fillUndefDisVec l!!s)
 
 -- FLOYD-WARSHALL ALGORITHM
 
