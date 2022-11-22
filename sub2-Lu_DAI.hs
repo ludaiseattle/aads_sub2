@@ -169,30 +169,53 @@ adjMatrixW (x:xs) = insertMatrixW (first x, second x, third x) (adjMatrixW xs)
 -}
 
 type DefinitedDisVec = [Maybe Float]
-type UndefDisVec = [(Bool, Maybe Float)] --true: need to discuss; false: already has a best distance
+type UndefDisVec = [(Int, Maybe Float)] --Int: vertice
 
-solveFirst :: Int -> DefinitedDisVec
-solveFirst s = [if x < s then Nothing else Just 0.0| x <- [0..s]]
+initDefV :: Int -> DefinitedDisVec
+initDefV s = [if x < s then Nothing else Just 0.0| x <- [0..s]]
 
-fillGapUndef :: (Int, Float) -> UndefDisVec -> UndefDisVec
-fillGapUndef tup l = if length l > fst tup then l 
-   else l ++ take (fst tup - length l +1) (repeat (True, Nothing))
+initUndefV :: Int -> UndefDisVec
+initUndefV len = [(x, Nothing)|x <- [0..len-1]]
 
-fillOne :: (Int, Float) -> UndefDisVec -> UndefDisVec
-fillOne tup l = insertUndefTup tup (fillGapUndef tup l)
-   where insertUndefTup tup list = take (fst tup) list ++ [(True, Just (snd tup))] ++ drop (fst tup+1) list
+findShortestV :: UndefDisVec -> (Int, Maybe Float)
+findShortestV [x] = x
+findShortestV (x:xs)
+   | snd x == Nothing = minV
+   | snd minV == Nothing = x
+   | snd x < snd minV = x
+   | otherwise = minV
+   where minV = findShortestV xs   
 
-fillUndefDisVec :: [(Int,Float)] -> UndefDisVec
-fillUndefDisVec [] = []
-fillUndefDisVec (x:xs) = fillOne x (fillUndefDisVec xs)
+updateDefV :: DefinitedDisVec -> (Int, Maybe Float) -> DefinitedDisVec
+updateDefV defVOld tup = (take (fst tup) defVOld) ++ [snd tup] ++ (drop (fst tup+1) defVOld)
 
+findInOld :: [(Int, Float)] -> Int -> Maybe (Int, Maybe Float)
+findInOld [] _ = Nothing
+findInOld (x:xs) v = if fst x == v then Just (fst x, Just (snd x)) else findInOld xs v
 
---startRun :: Int -> WAdjList -> DefinitedDisVec -> UndefDisVec -> [Maybe Float]
---startRun = 
+compareW :: Maybe (Int, Maybe Float) -> (Int, Maybe Float) -> Float -> (Int, Maybe Float)
+compareW new old oldW = if oldW + snd new >= snd old then old else (fst new, Just (oldW + snd new))
 
---dijkstra :: WAdjList -> Int -> [Maybe Float]
---dijkstra [] s = [] 
---dijkstra l s = startRun s l (solveFirst s) (fillUndefDisVec l!!s)
+updateUndefV :: Float -> UndefDisVec -> [(Int, Float)] -> UndefDisVec
+updateUndefV oldWeight oriL weightL = 
+   [ let result = findInOld weightL (fst x) 
+          in if result == Nothing then x else (compareW result x oldWeight) | x <- oriL ]
+
+deleteOldV :: UndefDisVec -> Int -> UndefDisVec
+deleteOldV l v = [ (fst x) /= v  | x <- l]
+
+dijLoop :: DefinitedDisVec -> UndefDisVec -> WAdjList -> DefinitedDisVec
+dijLoop defV [] _= defV
+dijLoop defV undefV weightL= 
+   let shortV = findShortestV undefV 
+   in dijLoop (updateDefV defV shortV) (deleteOldV (updateUndefV (snd shortV) undefV weightL!!(fst shortV)) (fst shortV)) weightL
+
+dijkstra :: WAdjList -> Int -> [Maybe Float]
+dijkstra [] s = [] 
+dijkstra l s =
+   let defV = initDefV s   
+       undefV = updateUndefV 0.0 (initUndefV (length l)) l!!s
+   in dijLoop defV undefV l
 
 -- FLOYD-WARSHALL ALGORITHM
 
