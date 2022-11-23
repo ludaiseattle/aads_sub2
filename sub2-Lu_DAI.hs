@@ -171,8 +171,8 @@ adjMatrixW (x:xs) = insertMatrixW (first x, second x, third x) (adjMatrixW xs)
 type DefinitedDisVec = [Maybe Float]
 type UndefDisVec = [(Int, Float)] --Int: vertice -1: Nothing
 
-initDefV :: Int -> DefinitedDisVec
-initDefV s = [if x < s then Nothing else Just 0.0| x <- [0..s]]
+initDefV :: Int -> Int -> DefinitedDisVec
+initDefV s len = [if x == s then Nothing else Just 0.0| x <- [0..len]]
 
 initUndefV :: Int -> UndefDisVec
 initUndefV len = [(x, -1)|x <- [0..len-1]]
@@ -189,17 +189,20 @@ findShortestV (x:xs)
 updateDefV :: DefinitedDisVec -> (Int, Float) -> DefinitedDisVec
 updateDefV defVOld tup = (take (fst tup) defVOld) ++ [if snd tup == -1 then Nothing else Just (snd tup)] ++ (drop (fst tup+1) defVOld)
 
-findInOld :: [(Int, Float)] -> Int -> (Int, Float)
-findInOld [] _ = (-1, -1)
-findInOld (x:xs) v = if fst x == v then x else findInOld xs v
+iSUpdate :: [(Int, Float)] -> Int -> (Int, Float)
+iSUpdate [] _ = (-1, 99999)
+iSUpdate (x:xs) v = if fst x == v then x else iSUpdate xs v
 
 compareW :: (Int, Float) -> (Int, Float) -> Float -> (Int, Float)
-compareW new old oldW = if oldW + snd new >= snd old then old else (fst new, oldW + snd new)
+compareW new old vOldW 
+   | snd old == -1 = (fst new, vOldW + snd new)
+   | vOldW + snd new >= snd old = old 
+   | otherwise = (fst new, vOldW + snd new)
 
 updateUndefV :: Float -> UndefDisVec -> [(Int, Float)] -> UndefDisVec
-updateUndefV oldWeight oriL weightL = 
-   [ let result = findInOld weightL (fst x) 
-          in if fst result == -1 then x else (compareW result x oldWeight) | x <- oriL ]
+updateUndefV vOldWeight currUndef currVWeightLst = 
+   [ let result = iSUpdate currVWeightLst (fst x) 
+          in if fst result == -1 then x else (compareW result x vOldWeight) | x <- currUndef ]
 
 deleteOldV :: UndefDisVec -> Int -> UndefDisVec
 deleteOldV l v = [ x | x <- l, fst x /= v]
@@ -213,10 +216,11 @@ dijLoop defV undefV weightL=
 dijkstra :: WAdjList -> Int -> [Maybe Float]
 dijkstra [] s = [] 
 dijkstra l s =
-   let defV = initDefV s   
+   let defV = initDefV s (length l - 1)  
        undefV = updateUndefV 0.0 (initUndefV (length l)) (l!!s)
    in dijLoop defV undefV l
-
+-- test: updateUndefV 0.0 [(0,-1.0),(1,-1.0),(2,-1.0),(3,-1.0),(4,-1.0)] [(1,1),(2,1)]
+-- test: 
 -- FLOYD-WARSHALL ALGORITHM
 
 {-
