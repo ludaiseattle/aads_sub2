@@ -169,52 +169,52 @@ adjMatrixW (x:xs) = insertMatrixW (first x, second x, third x) (adjMatrixW xs)
 -}
 
 type DefinitedDisVec = [Maybe Float]
-type UndefDisVec = [(Int, Maybe Float)] --Int: vertice
+type UndefDisVec = [(Int, Float)] --Int: vertice -1: Nothing
 
 initDefV :: Int -> DefinitedDisVec
 initDefV s = [if x < s then Nothing else Just 0.0| x <- [0..s]]
 
 initUndefV :: Int -> UndefDisVec
-initUndefV len = [(x, Nothing)|x <- [0..len-1]]
+initUndefV len = [(x, -1)|x <- [0..len-1]]
 
-findShortestV :: UndefDisVec -> (Int, Maybe Float)
+findShortestV :: UndefDisVec -> (Int, Float)
 findShortestV [x] = x
 findShortestV (x:xs)
-   | snd x == Nothing = minV
-   | snd minV == Nothing = x
+   | snd x == -1 = minV
+   | snd minV == -1 = x
    | snd x < snd minV = x
    | otherwise = minV
    where minV = findShortestV xs   
 
-updateDefV :: DefinitedDisVec -> (Int, Maybe Float) -> DefinitedDisVec
-updateDefV defVOld tup = (take (fst tup) defVOld) ++ [snd tup] ++ (drop (fst tup+1) defVOld)
+updateDefV :: DefinitedDisVec -> (Int, Float) -> DefinitedDisVec
+updateDefV defVOld tup = (take (fst tup) defVOld) ++ [if snd tup == -1 then Nothing else Just (snd tup)] ++ (drop (fst tup+1) defVOld)
 
-findInOld :: [(Int, Float)] -> Int -> Maybe (Int, Maybe Float)
-findInOld [] _ = Nothing
-findInOld (x:xs) v = if fst x == v then Just (fst x, Just (snd x)) else findInOld xs v
+findInOld :: [(Int, Float)] -> Int -> (Int, Float)
+findInOld [] _ = (-1, -1)
+findInOld (x:xs) v = if fst x == v then x else findInOld xs v
 
-compareW :: Maybe (Int, Maybe Float) -> (Int, Maybe Float) -> Float -> (Int, Maybe Float)
-compareW new old oldW = if oldW + snd new >= snd old then old else (fst new, Just (oldW + snd new))
+compareW :: (Int, Float) -> (Int, Float) -> Float -> (Int, Float)
+compareW new old oldW = if oldW + snd new >= snd old then old else (fst new, oldW + snd new)
 
 updateUndefV :: Float -> UndefDisVec -> [(Int, Float)] -> UndefDisVec
 updateUndefV oldWeight oriL weightL = 
    [ let result = findInOld weightL (fst x) 
-          in if result == Nothing then x else (compareW result x oldWeight) | x <- oriL ]
+          in if fst result == -1 then x else (compareW result x oldWeight) | x <- oriL ]
 
 deleteOldV :: UndefDisVec -> Int -> UndefDisVec
-deleteOldV l v = [ (fst x) /= v  | x <- l]
+deleteOldV l v = [ x | x <- l, fst x /= v]
 
 dijLoop :: DefinitedDisVec -> UndefDisVec -> WAdjList -> DefinitedDisVec
 dijLoop defV [] _= defV
 dijLoop defV undefV weightL= 
    let shortV = findShortestV undefV 
-   in dijLoop (updateDefV defV shortV) (deleteOldV (updateUndefV (snd shortV) undefV weightL!!(fst shortV)) (fst shortV)) weightL
+   in dijLoop (updateDefV defV shortV) (deleteOldV (updateUndefV (snd shortV) undefV (weightL!!(fst shortV))) (fst shortV)) weightL
 
 dijkstra :: WAdjList -> Int -> [Maybe Float]
 dijkstra [] s = [] 
 dijkstra l s =
    let defV = initDefV s   
-       undefV = updateUndefV 0.0 (initUndefV (length l)) l!!s
+       undefV = updateUndefV 0.0 (initUndefV (length l)) (l!!s)
    in dijLoop defV undefV l
 
 -- FLOYD-WARSHALL ALGORITHM
