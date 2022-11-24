@@ -243,23 +243,39 @@ dijkstra l s =
      (Just x) if the shortest path from i to j has length x
 -}
 
+plus :: Maybe Float -> Maybe Float -> Maybe Float
+plus a b = pure (+) <*> a <*> b
 
+min' :: (Monad m, Ord a) => m a -> m a -> m a
+min' x y = do
+   m <- x
+   n <- y
+   if m < n then return m else return n
 
-minDis :: Int -> Int -> Int -> Float
-minDis k i j w = min' (w!!i!!j) (w!!i!!k and' w!!k!!j)
+minDis :: Int -> Int -> Int -> WAdjMatrix -> Maybe Float
+minDis i j k w = min' (w!!i!!j) (plus (w!!i!!k) (w!!k!!j)) 
 
-minIJ :: [Float] -> Float
+minIJ :: [Maybe Float] -> Maybe Float
 minIJ [x] = x
-minIJ (x:xs) = let res = minIJ xs where if x <= res then x else res
+minIJ (x:xs) = let res = minIJ xs in min x res
 
-floydLoopK :: Int -> Int -> WAdjMatrix -> Maybe Float
-floydLoopK i k w = minIJ [minDis k i j w| k <- [0..(length w -1)]] -- just
+updateJ :: [Maybe Float] -> Int -> Maybe Float -> [Maybe Float]
+updateJ l j val = take j l ++ [val] ++ drop (j+1) l
 
-floydLoopJ :: Int -> WAdjMatrix -> [Maybe Float]
-floydLoopJ i w = [floydLoopK i j w | j <- [0..(length w -1)]]
+updateMatrix :: WAdjMatrix -> Int -> Int -> Maybe Float -> WAdjMatrix
+updateMatrix w i j val = take i w ++ [updateJ (w!!i) j val] ++ drop (i+1) w
 
-floydLoopI :: WAdjMatrix -> WAdjMatrix
-floydLoopI w = [floydLoopJ i w | i <- [0..(length w -1)]]
+floydLoopK :: WAdjMatrix -> Int -> Int -> [Int] -> WAdjMatrix
+floydLoopK w i j [] = w
+floydLoopK w i j l = updateMatrix w i j (minIJ [ minDis i j k w | k <- l ])
+
+floydLoopJ :: WAdjMatrix -> Int -> [Int] -> WAdjMatrix
+floydLoopJ w i [] = w
+floydLoopJ w i (x:xs)= floydLoopK (floydLoopJ w i xs) i x [0..(length w -1)]
+
+floydLoopI :: WAdjMatrix -> [Int] ->WAdjMatrix
+floydLoopI w [] = w
+floydLoopI w (x:xs)= floydLoopJ (floydLoopI w xs) x [0..(length w -1)]
 
 floydWarshall :: WAdjMatrix -> WAdjMatrix
-floydWarshall w =  if length w == 0 then [] else floydLoopK w
+floydWarshall w =  if null w then [] else floydLoopI w [0..(length w -1)]
