@@ -213,6 +213,7 @@ updateUndefV vOldWeight currUndef currVWeightLst =
    [ let result = iSUpdate currVWeightLst (fst x) 
           in if fst result == -1 then x else 
             (compareW result x vOldWeight) | x <- currUndef ]
+-- test: updateUndefV 0.0 [(0,-1.0),(1,-1.0),(2,-1.0),(3,-1.0),(4,-1.0)] [(1,1),(2,1)]
 
 deleteOldV :: UndefDisVec -> Int -> UndefDisVec
 deleteOldV l v = [ x | x <- l, fst x /= v]
@@ -230,9 +231,9 @@ dijkstra l s =
    let defV = initDefV s (length l - 1)  
        undefV = updateUndefV 0.0 (initUndefV (length l)) (l!!s)
    in if (s + 1) > length l then [] else dijLoop defV undefV l
--- test: updateUndefV 0.0 [(0,-1.0),(1,-1.0),(2,-1.0),(3,-1.0),(4,-1.0)] [(1,1),(2,1)]
--- test: 
-
+-- test: wadjl = [[(0, 0.0), (1, 1.0), (2, 2.0), (5, 10.0)], [(1, 0.0), (3, 5.0)], [(2, 0.0), (3, 1.0), (4, 1.0), (5, 4.0)], [(3, 0.0), (4, 4.0)], [(4, 0.0)], [(0, 1.0), (4, 4.0), (5, 0.0)]]
+-- test: dijkstra wadjl 0
+-- test: dijkstra wadjl 5
 
 -- FLOYD-WARSHALL ALGORITHM
 
@@ -245,25 +246,42 @@ dijkstra l s =
 
 plus :: Maybe Float -> Maybe Float -> Maybe Float
 plus a b = pure (+) <*> a <*> b
+-- Test: plus Nothing (Just 4)
+-- Test: plus (Just 5) (Just 6)
 
 min' :: (Monad m, Ord a) => m a -> m a -> m a
 min' x y = do
    m <- x
    n <- y
    if m < n then return m else return n
+-- Test: min' Nothing (Just 5)
+-- Test: min' (Just 4) (Just 0)
 
 minDis :: Int -> Int -> Int -> WAdjMatrix -> Maybe Float
-minDis i j k w = min' (w!!i!!j) (plus (w!!i!!k) (w!!k!!j)) 
+minDis i j k w = 
+   let a = (w!!i!!j) 
+       b = (plus (w!!i!!k) (w!!k!!j)) 
+   in if a == Nothing && b /= Nothing then b 
+   else if b == Nothing && a /= Nothing then a 
+   else min' a b 
+-- Test: minDis 0 2 1 [[Just 0.0,Just 2.2,Just 10.0],[Just 2.0,Nothing,Just 2.0],[Just 6.5,Just 2.0]]
 
 minIJ :: [Maybe Float] -> Maybe Float
 minIJ [x] = x
-minIJ (x:xs) = let res = minIJ xs in min x res
+minIJ (x:xs) = 
+   let res = minIJ xs 
+   in if x == Nothing && res /= Nothing then res 
+   else if res == Nothing && x /= Nothing then x 
+   else min' x res 
+-- Test: minIJ [Just 3.3, Nothing, Just 0, Just 2.2]
 
 updateJ :: [Maybe Float] -> Int -> Maybe Float -> [Maybe Float]
 updateJ l j val = take j l ++ [val] ++ drop (j+1) l
+-- Test: updateJ [Just 1, Just 2, Just 4] 2 (Just 3)
 
 updateMatrix :: WAdjMatrix -> Int -> Int -> Maybe Float -> WAdjMatrix
 updateMatrix w i j val = take i w ++ [updateJ (w!!i) j val] ++ drop (i+1) w
+-- Test: updateMatrix [[Just 0.0, Just 3.3, Just 4], [Just 2, Nothing, Just 2], [Just 6.5, Just 2]] 0 1 (Just 2.2)
 
 floydLoopK :: WAdjMatrix -> Int -> Int -> [Int] -> WAdjMatrix
 floydLoopK w i j [] = w
@@ -279,3 +297,5 @@ floydLoopI w (x:xs)= floydLoopJ (floydLoopI w xs) x [0..(length w -1)]
 
 floydWarshall :: WAdjMatrix -> WAdjMatrix
 floydWarshall w =  if null w then [] else floydLoopI w [0..(length w -1)]
+-- Test: wadjm = [[Just 0.0, Just 1.0, Just 2.0, Nothing, Nothing, Just 10.0], [Nothing, Just 0.0, Nothing, Just 5.0, Nothing, Nothing], [Nothing, Nothing, Just 0.0, Just 1.0, Just 1.0, Just 4.0], [Nothing, Nothing, Nothing, Just 0.0, Just 4.0, Nothing], [Nothing, Nothing, Nothing, Nothing, Just 0.0, Nothing], [Just 1.0, Nothing, Nothing, Nothing, Just 4.0, Just 0.0]]
+-- Test: floydWarshall wadjm
