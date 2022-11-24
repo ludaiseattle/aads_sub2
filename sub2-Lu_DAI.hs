@@ -59,7 +59,8 @@ fillGap n l =
 
 insertTuple :: (Int,Int)->AdjList -> AdjList
 insertTuple tup l = insertEle tup (fillGap (fst tup) l)
-       where insertEle tup list = (take (fst tup) list) ++ [snd tup:(list!!fst tup)] ++ (drop (fst tup+1) list)
+       where insertEle tup list = (take (fst tup) list) ++ 
+               [snd tup:(list!!fst tup)] ++ (drop (fst tup+1) list)
 
 adjList :: [(Int,Int)] -> AdjList
 adjList [] = []
@@ -68,7 +69,8 @@ adjList (x:xs) = insertTuple (fst x, snd x)  (adjList xs)
 -- GENERATION OF ADJACENCY MATRIX
 fillByBool :: Int -> [Bool] -> [Bool]
 fillByBool n l = fill n (fillBoolGap n l)
-   where fillBoolGap n l = if length l > n then l else l ++ take (n - length l +1) (repeat False)
+   where fillBoolGap n l = if length l > n then l else l ++ 
+            take (n - length l +1) (repeat False)
          fill n list= take n list ++ [True] ++ drop (n+1) list
 
 fillBoolGap :: Int -> AdjMatrix -> AdjMatrix
@@ -78,7 +80,8 @@ fillBoolGap n l =
 
 insertMatrix :: (Int,Int) -> AdjMatrix -> AdjMatrix
 insertMatrix tup l = insertValue tup (fillBoolGap (fst tup) l)
-   where insertValue tup list = (take (fst tup) list) ++ [fillByBool (snd tup) (list!!fst tup)] ++ (drop (fst tup+1) list)
+   where insertValue tup list = (take (fst tup) list) ++ 
+            [fillByBool (snd tup) (list!!fst tup)] ++ (drop (fst tup+1) list)
 
 adjMatrix :: [(Int,Int)] -> AdjMatrix
 adjMatrix [] = []
@@ -129,7 +132,9 @@ fillLWGap n l =
 
 insertListW :: (Int, Int, Float) -> WAdjList -> WAdjList
 insertListW tup l = insertLWEle tup (fillLWGap (first tup) l)
-   where insertLWEle tup list = (take (first tup) list) ++ [(second tup, third tup):(list!!first tup)] ++ (drop (first tup+1) list)
+   where insertLWEle tup list = (take (first tup) list) ++ 
+            [(second tup, third tup):(list!!first tup)] ++ 
+            (drop (first tup+1) list)
 
 adjListW :: Edges -> WAdjList
 adjListW [] = []
@@ -142,7 +147,8 @@ adjListW (x:xs) = insertListW (first x, second x, third x)  (adjListW xs)
 
 fillByBoolW :: (Int, Float) -> [Maybe Float] -> [Maybe Float]
 fillByBoolW (n, w) l = fill (n, w) (fillBoolGap n l)
-   where fillBoolGap n l = if length l > n then l else l ++ take (n - length l +1) (repeat Nothing)
+   where fillBoolGap n l = if length l > n then l else l ++ 
+            take (n - length l +1) (repeat Nothing)
          fill (n, w) list= take n list ++ [Just w] ++ drop (n+1) list
 
 fillBoolGapW :: Int -> WAdjMatrix -> WAdjMatrix
@@ -152,7 +158,9 @@ fillBoolGapW n l =
 
 insertMatrixW :: (Int,Int, Float) -> WAdjMatrix -> WAdjMatrix
 insertMatrixW tup l = insertValueW tup (fillBoolGapW (first tup) l)
-   where insertValueW tup list = (take (first tup) list) ++ [fillByBoolW (second tup, third tup) (list!!first tup)] ++ (drop (first tup+1) list)
+   where insertValueW tup list = (take (first tup) list) ++ 
+            [fillByBoolW (second tup, third tup) (list!!first tup)] ++ 
+            (drop (first tup+1) list)
 
 adjMatrixW :: Edges -> WAdjMatrix
 adjMatrixW [] = []
@@ -187,7 +195,8 @@ findShortestV (x:xs)
    where minV = findShortestV xs   
 
 updateDefV :: DefinitedDisVec -> (Int, Float) -> DefinitedDisVec
-updateDefV defVOld tup = (take (fst tup) defVOld) ++ [if snd tup == -1 then Nothing else Just (snd tup)] ++ (drop (fst tup+1) defVOld)
+updateDefV defVOld tup = (take (fst tup) defVOld) ++ [if snd tup == 
+   -1 then Nothing else Just (snd tup)] ++ (drop (fst tup+1) defVOld)
 
 iSUpdate :: [(Int, Float)] -> Int -> (Int, Float)
 iSUpdate [] _ = (-1, 99999)
@@ -202,7 +211,8 @@ compareW new old vOldW
 updateUndefV :: Float -> UndefDisVec -> [(Int, Float)] -> UndefDisVec
 updateUndefV vOldWeight currUndef currVWeightLst = 
    [ let result = iSUpdate currVWeightLst (fst x) 
-          in if fst result == -1 then x else (compareW result x vOldWeight) | x <- currUndef ]
+          in if fst result == -1 then x else 
+            (compareW result x vOldWeight) | x <- currUndef ]
 
 deleteOldV :: UndefDisVec -> Int -> UndefDisVec
 deleteOldV l v = [ x | x <- l, fst x /= v]
@@ -211,16 +221,19 @@ dijLoop :: DefinitedDisVec -> UndefDisVec -> WAdjList -> DefinitedDisVec
 dijLoop defV [] _= defV
 dijLoop defV undefV weightL= 
    let shortV = findShortestV undefV 
-   in dijLoop (updateDefV defV shortV) (deleteOldV (updateUndefV (snd shortV) undefV (weightL!!(fst shortV))) (fst shortV)) weightL
+   in dijLoop (updateDefV defV shortV) (deleteOldV 
+   (updateUndefV (snd shortV) undefV (weightL!!(fst shortV))) (fst shortV)) weightL
 
 dijkstra :: WAdjList -> Int -> [Maybe Float]
 dijkstra [] s = [] 
 dijkstra l s =
    let defV = initDefV s (length l - 1)  
        undefV = updateUndefV 0.0 (initUndefV (length l)) (l!!s)
-   in dijLoop defV undefV l
+   in if (s + 1) > length l then [] else dijLoop defV undefV l
 -- test: updateUndefV 0.0 [(0,-1.0),(1,-1.0),(2,-1.0),(3,-1.0),(4,-1.0)] [(1,1),(2,1)]
 -- test: 
+
+
 -- FLOYD-WARSHALL ALGORITHM
 
 {-
@@ -230,4 +243,23 @@ dijkstra l s =
      (Just x) if the shortest path from i to j has length x
 -}
 
---floydWarshall :: WAdjMatrix -> WAdjMatrix
+
+
+minDis :: Int -> Int -> Int -> Float
+minDis k i j w = min' (w!!i!!j) (w!!i!!k and' w!!k!!j)
+
+minIJ :: [Float] -> Float
+minIJ [x] = x
+minIJ (x:xs) = let res = minIJ xs where if x <= res then x else res
+
+floydLoopK :: Int -> Int -> WAdjMatrix -> Maybe Float
+floydLoopK i k w = minIJ [minDis k i j w| k <- [0..(length w -1)]] -- just
+
+floydLoopJ :: Int -> WAdjMatrix -> [Maybe Float]
+floydLoopJ i w = [floydLoopK i j w | j <- [0..(length w -1)]]
+
+floydLoopI :: WAdjMatrix -> WAdjMatrix
+floydLoopI w = [floydLoopJ i w | i <- [0..(length w -1)]]
+
+floydWarshall :: WAdjMatrix -> WAdjMatrix
+floydWarshall w =  if length w == 0 then [] else floydLoopK w
