@@ -69,25 +69,30 @@ adjList (x:xs) = insertTuple (fst x, snd x)  (adjList xs)
 -- Test: adjList l 
 
 -- GENERATION OF ADJACENCY MATRIX
-fillByBool :: Int -> [Bool] -> [Bool]
-fillByBool n l = fill n (fillBoolGap n l)
-   where fillBoolGap n l = if length l > n then l else l ++ 
-            take (n - length l +1) (repeat False)
-         fill n list= take n list ++ [True] ++ drop (n+1) list
+getMaxV :: [(Int,Int)] -> Int
+getMaxV [x] = fst x
+getMaxV (x:xs) = 
+   let res = getMaxV xs 
+   in max (fst x)  res
 
-fillBoolGap :: Int -> AdjMatrix -> AdjMatrix
-fillBoolGap n l =
-   if length l > n then l 
-   else l ++ take (n - length l +1) (repeat [])
+emptyMatrix :: [(Int,Int)] -> AdjMatrix
+emptyMatrix l = 
+   let len = getMaxV l + 1
+   in replicate len (replicate len False)
 
-insertMatrix :: (Int,Int) -> AdjMatrix -> AdjMatrix
-insertMatrix tup l = insertValue tup (fillBoolGap (fst tup) l)
-   where insertValue tup list = (take (fst tup) list) ++ 
-            [fillByBool (snd tup) (list!!fst tup)] ++ (drop (fst tup+1) list)
+instead :: [Bool] -> Int  -> AdjMatrix
+instead l j  = [take j l ++ [True] ++ drop (j+1) l]
+
+insertV :: (Int, Int) -> AdjMatrix -> AdjMatrix
+insertV (i, j) w = take i w ++ instead (w!!i) j ++ drop (i+1) w
+
+insertLoop :: [(Int,Int)] -> AdjMatrix -> AdjMatrix
+insertLoop [] w = w
+insertLoop (x:xs) w = insertV x (insertLoop xs w)
 
 adjMatrix :: [(Int,Int)] -> AdjMatrix
 adjMatrix [] = []
-adjMatrix (x:xs) = insertMatrix (fst x, snd x) (adjMatrix xs)
+adjMatrix l@(x:xs) = insertLoop l (emptyMatrix l)
 --Test: l = [(0,0), (0,1), (0, 2), (0,5), (1,1), (1,3), (2,2), (2,3), (2,4), (2,5), (3,3), (3,4), (4,4), (5,0), (5,4), (5,5)] 
 --Test: adjMatrix l
 
@@ -143,34 +148,37 @@ insertListW tup l = insertLWEle tup (fillLWGap (first tup) l)
 adjListW :: Edges -> WAdjList
 adjListW [] = []
 adjListW (x:xs) = insertListW (first x, second x, third x)  (adjListW xs)
-
--- test: adjListW [(1,2,0.1),(1,1,0.2),(2,3,0.5)]
+-- Test: l = [(0,0, 0), (0,1, 1), (0, 2, 2), (0,5, 10), (1,1, 0), (1,3, 5), (2,2, 0), (2,3, 1), (2,4, 1), (2,5, 4), (3,3, 0), (3,4, 4), (4,4, 0), (5,0, 1), (5,4, 4), (5,5, 0)]
+-- Test: adjListW l
 
 -- GENERATION OF ADJACENCY MATRIX
 --   from a list of edges
+getMaxVW :: Edges -> Int
+getMaxVW [x] = first x
+getMaxVW (x:xs) = 
+   let res = getMaxVW xs 
+   in max (first x)  res
 
-fillByBoolW :: (Int, Float) -> [Maybe Float] -> [Maybe Float]
-fillByBoolW (n, w) l = fill (n, w) (fillBoolGap n l)
-   where fillBoolGap n l = if length l > n then l else l ++ 
-            take (n - length l +1) (repeat Nothing)
-         fill (n, w) list= take n list ++ [Just w] ++ drop (n+1) list
+emptyMatrixW :: Edges -> WAdjMatrix
+emptyMatrixW l = 
+   let len = getMaxVW l + 1
+   in replicate len (replicate len Nothing)
 
-fillBoolGapW :: Int -> WAdjMatrix -> WAdjMatrix
-fillBoolGapW n l =
-   if length l > n then l 
-   else l ++ take (n - length l +1) (repeat [])
+insteadW :: [Maybe Float] -> Int -> Float -> WAdjMatrix
+insteadW l j v = [take j l ++ [Just v] ++ drop (j+1) l]
 
-insertMatrixW :: (Int,Int, Float) -> WAdjMatrix -> WAdjMatrix
-insertMatrixW tup l = insertValueW tup (fillBoolGapW (first tup) l)
-   where insertValueW tup list = (take (first tup) list) ++ 
-            [fillByBoolW (second tup, third tup) (list!!first tup)] ++ 
-            (drop (first tup+1) list)
+insertVW :: (Int, Int, Float) -> WAdjMatrix -> WAdjMatrix
+insertVW (i, j, v) w = take i w ++ insteadW (w!!i) j v ++ drop (i+1) w
+
+insertLoopW :: Edges -> WAdjMatrix -> WAdjMatrix
+insertLoopW [] w = w
+insertLoopW (x:xs) w = insertVW x (insertLoopW xs w)
 
 adjMatrixW :: Edges -> WAdjMatrix
 adjMatrixW [] = []
-adjMatrixW (x:xs) = insertMatrixW (first x, second x, third x) (adjMatrixW xs)
-
--- test: adjMatrixW [(1,1,0.1), (1,0,0.2),(2,1,0.3),(3,3,0.4)]
+adjMatrixW l@(x:xs) = insertLoopW l (emptyMatrixW l)
+ -- Test: l = [(0,0, 0), (0,1, 1), (0, 2, 2), (0,5, 10), (1,1, 0), (1,3, 5), (2,2, 0), (2,3, 1), (2,4, 1), (2,5, 4), (3,3, 0), (3,4, 4), (4,4, 0), (5,0, 1), (5,4, 4), (5,5, 0)]
+-- test: adjMatrixW [(1,1,0.1), (1,0,0.2),(2,1,0.3),(3,3,0.4)] 
 
 -- DIJKSTRA'S ALGORITHM
 
