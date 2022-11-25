@@ -65,6 +65,8 @@ insertTuple tup l = insertEle tup (fillGap (fst tup) l)
 adjList :: [(Int,Int)] -> AdjList
 adjList [] = []
 adjList (x:xs) = insertTuple (fst x, snd x)  (adjList xs)
+--Test: l = [(0,0), (0,1), (0, 2), (0,5), (1,1), (1,3), (2,2), (2,3), (2,4), (2,5), (3,3), (3,4), (4,4), (5,0), (5,4), (5,5)]
+-- Test: adjList l 
 
 -- GENERATION OF ADJACENCY MATRIX
 fillByBool :: Int -> [Bool] -> [Bool]
@@ -86,6 +88,8 @@ insertMatrix tup l = insertValue tup (fillBoolGap (fst tup) l)
 adjMatrix :: [(Int,Int)] -> AdjMatrix
 adjMatrix [] = []
 adjMatrix (x:xs) = insertMatrix (fst x, snd x) (adjMatrix xs)
+--Test: l = [(0,0), (0,1), (0, 2), (0,5), (1,1), (1,3), (2,2), (2,3), (2,4), (2,5), (3,3), (3,4), (4,4), (5,0), (5,4), (5,5)] 
+--Test: adjMatrix l
 
 --------------------------------------------------------
 
@@ -299,3 +303,6 @@ floydWarshall :: WAdjMatrix -> WAdjMatrix
 floydWarshall w =  if null w then [] else floydLoopI w [0..(length w -1)]
 -- Test: wadjm = [[Just 0.0, Just 1.0, Just 2.0, Nothing, Nothing, Just 10.0], [Nothing, Just 0.0, Nothing, Just 5.0, Nothing, Nothing], [Nothing, Nothing, Just 0.0, Just 1.0, Just 1.0, Just 4.0], [Nothing, Nothing, Nothing, Just 0.0, Just 4.0, Nothing], [Nothing, Nothing, Nothing, Nothing, Just 0.0, Nothing], [Just 1.0, Nothing, Nothing, Nothing, Just 4.0, Just 0.0]]
 -- Test: floydWarshall wadjm
+
+-- Test: wadjm2 = [[Just 0.0, Just 1.0, Nothing, Just 2.0, Nothing], [Nothing, Just 0.0, Nothing, Nothing, Just 4.0], [Just 10.0, Nothing, Just 0.0, Just 5.0, Nothing], [Just 3.0, Just 9.0, Nothing, Just 0.0, Just 2.0], [Nothing, Just 6.0, Just 7.0, Nothing, Just 0.0]]
+-- Test: floydWarshall wadjm2
